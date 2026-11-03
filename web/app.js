@@ -76,7 +76,7 @@ async function load() {
  try { const res = await fetch('/api/state'); if (!res.ok) throw Error(); state = await res.json(); readPreferences(); $('toggleSharing').textContent=state.self.enabled?'共享：开':'共享：关'; $('toggleSharing').setAttribute('aria-pressed',String(state.self.enabled)); $('toggleAutoSave').textContent=state.self.autoSave?'自动保存：开':'自动保存：关'; $('toggleAutoSave').setAttribute('aria-pressed',String(!!state.self.autoSave)); $('deviceSettings').classList.toggle('paused',!state.self.enabled); $('deviceName').textContent = state.self.name; $('syncStatus').textContent = state.self.enabled ? '自动更新中 · 设备直接连接' : '本机共享已暂停'; if(state.saveError) $('syncStatus').textContent=state.saveError;
   const view = JSON.stringify({ self: state.self, peers: state.peers.map(({ updated, ...p }) => p).sort((a,b) => a.id.localeCompare(b.id)), filter, expiry: state.peers.map(p=>[p.id,offlineAge(p)<OFFLINE_FILE_MS,offlineAge(p)<OFFLINE_TEXT_MS]).sort((a,b)=>a[0].localeCompare(b[0])) });
   if (view !== rendered) { rendered = view; render(); if($('contentManager').open)manager(); }
- } catch { $('syncStatus').textContent = '正在重新连接 · 已有内容保留'; } finally { loading = false; }
+ } catch { $('syncStatus').textContent = '正在重新连接 · 已有内容保留'; } finally { loading = false; renderDownloads(); }
 }
 function contentURL(peer, item, download = false) { return `/api/content/${encodeURIComponent(peer)}/${encodeURIComponent(item.id)}${download ? '?download=1' : ''}`; }
 function render() {
@@ -129,7 +129,7 @@ function render() {
   const actions = element('div','item-actions');
   if (item.kind === 'text') { const copy = element('button','','复制'); copy.setAttribute('aria-label','复制文字'); copy.onclick = async () => { try { if (window.Android) Android.copyText(item.text); else await navigator.clipboard.writeText(item.text); toast('已复制'); } catch { toast('复制失败，请选中文字复制'); } }; actions.append(copy); }
   if (online || item.kind === 'text') { const save = element('a','','保存'); save.href = contentURL(peer,item,true); save.download = item.kind === 'text' ? '文字片段.txt' : item.name;
-  save.onclick = e => { if (window.Android) {e.preventDefault();Android.download(new URL(save.href).href,save.download);toast('开始保存，可在系统通知中查看');} }; actions.append(save); }
+  save.onclick = e => { if (window.Android) {e.preventDefault();Android.download(new URL(save.href).href,save.download,item.kind,item.size);showDownloads();} }; actions.append(save); }
   if (peer === 'self') { const remove = element('button','remove','×'); remove.title = '撤下共享'; remove.setAttribute('aria-label',`撤下 ${item.kind === 'text' ? '文字' : item.name}`); remove.onclick = async () => { try { await api(`/api/items/${item.id}`,undefined,'DELETE'); await load(); toast('已撤下共享，原始文件保留'); } catch(e) {toast(e.message);} }; top.append(remove); }
   if(peer==='self') { const visibility=element('button','',item.hidden?'恢复共享':'暂停此条'); visibility.onclick=async()=>{try{await api(`/api/items/${item.id}/visibility`,{hidden:!item.hidden});await load();}catch(e){toast(e.message);}};actions.append(visibility); }
   else {const hide=element('button','','隐藏');hide.setAttribute('aria-label',`隐藏 ${item.kind==='text'?item.text:item.name}`);hide.onclick=()=>{preferences.items[peer+'/'+item.id]=true;persistPreferences();};actions.append(hide);}
@@ -164,4 +164,25 @@ $('searchClear').onclick=()=>{$('search').value='';query='';render();$('search')
 $('kindFilter').querySelectorAll('[data-kind]').forEach(button=>button.onclick=()=>{kindFilter=button.dataset.kind;$('kindFilter').querySelectorAll('[data-kind]').forEach(option=>option.setAttribute('aria-pressed',String(option.dataset.kind===kindFilter)));if(state)render();});
 if(window.Android && Android.backgroundSettings){$('backgroundSettings').hidden=false;$('backgroundSettings').onclick=()=>Android.backgroundSettings();}
 if(window.Android && Android.appBackgroundSettings){$('vendorBackgroundSettings').hidden=false;$('vendorBackgroundSettings').onclick=()=>Android.appBackgroundSettings();}
+let downloadView = '';
+function renderDownloads() {
+ if(!window.Android || !Android.downloadState)return;
+ const snapshot=Android.downloadState();if(snapshot===downloadView)return;downloadView=snapshot;
+ const data=JSON.parse(snapshot), active=data.items.filter(job=>['queued','downloading','finishing'].includes(job.status)).length;
+ $('downloadsButton').textContent=active?'下载 · '+active+' 进行中':'下载';$('downloadList').replaceChildren();
+ if(data.error)$('downloadList').append(element('p','download-error',data.error));
+ if(!data.items.length)$('downloadList').append(element('p','muted','暂无下载'));
+ for(const job of data.items) {
+  const row=element('section','download-row'),title=element('div','download-heading');title.append(element('strong','',job.name));
+  if(['complete','failed','unavailable'].includes(job.status)) {const action=element('button','light-button',job.status==='complete'?'打开':job.status==='unavailable'?'重新下载':'重试');action.onclick=()=>{if(job.status==='complete')Android.openDownload(job.id);else{Android.retryDownload(job.id);renderDownloads();}};title.append(action);}
+  row.append(title);
+  const labels={queued:'等待下载',downloading:'正在下载',finishing:'正在保存',complete:'已保存',unavailable:'曾保存 · 本地文件已移走或不可访问',failed:job.error||'下载失败'};
+  row.append(element('p',job.status==='failed'?'download-error':'muted',labels[job.status]+' · '+size(job.bytes)+(job.total>=0?' / '+size(job.total):'')));
+  if(['queued','downloading','finishing'].includes(job.status)){const progress=element('progress');if(job.total>0){progress.max=job.total;progress.value=job.bytes;}progress.setAttribute('aria-label',job.name+' 下载进度');row.append(progress);}
+  $('downloadList').append(row);
+ }
+}
+function showDownloads(){renderDownloads();if(!$('downloads').open)$('downloads').showModal();}
+$('downloadsClose').onclick=()=>$('downloads').close();
+if(window.Android && Android.downloadState){$('downloadsButton').hidden=false;$('downloadsButton').onclick=showDownloads;}
 load();setInterval(()=>{if(!document.hidden)load();},2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});

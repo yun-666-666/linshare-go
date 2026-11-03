@@ -2,14 +2,14 @@
 
 邻享 Go 是面向 Windows 和 Android 的局域网共享工具。把文件、图片、视频或文字放进共享空间，同一网络中的另一台设备即可按需查看和保存，无需云端账号。
 
-当前版本：**1.1.2**。
+当前版本：**1.1.3**。
 
 ## 下载与使用
 
 在 [Releases](https://github.com/yun-666-666/linshare-go/releases/latest) 下载：
 
-- Windows x64：`LinShare-Go-1.1.2-windows-x64.zip`，解压后运行 `邻享-Go.exe`。需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。
-- Android 10 及以上、ARM64：`LinShare-Go-1.1.2-android-arm64.apk`。当前安装包沿用本地开发签名及调试构建设置。
+- Windows x64：`LinShare-Go-1.1.3-windows-x64.zip`，解压后运行 `邻享-Go.exe`。需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。
+- Android 10 及以上、ARM64：`LinShare-Go-1.1.3-android-arm64.apk`。当前安装包沿用本地开发签名及调试构建设置。
 
 两台设备连接同一局域网后，启动邻享并添加共享内容。设备通常会自动发现，也可以在“设备与连接”里输入对方地址。可设置共享码、暂停共享，并选择自动保存附近设备的文件。
 
@@ -26,6 +26,7 @@
 - 离线文件缓存 30 秒、文字缓存 10 分钟，过期自动清理；本机共享与已下载文件保留。
 - 未变化的内容卡片在刷新时保留，减少图片重载与视频播放中断。
 - 自动保存到下载目录下的“邻享”分类文件夹。
+- Android 在应用内查看下载进度、完成记录、打开文件及重试；已保存记录在重启后保留。
 
 ## 从源码构建
 

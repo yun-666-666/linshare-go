@@ -181,3 +181,12 @@ main { padding-top: var(--status-inset, 0px); }
  .manager-toolbar .light-button { padding:8px; }
  .search-field input { font-size:12px; }
 }
+
+#downloads { background:linear-gradient(145deg,#252b40,#182632); overscroll-behavior:contain; }
+.download-row { padding:14px 0; border-top:1px solid #94aac026; }
+.download-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.download-heading strong { min-width:0; font-size:13px; overflow-wrap:anywhere; }
+.download-heading button { flex-shrink:0; min-height:40px; }
+.download-row p { margin:8px 0 0; }
+.download-row progress { display:block; height:6px; accent-color:#9cdbdc; }
+.download-error { color:#efb3be; font-size:12px; overflow-wrap:anywhere; }
