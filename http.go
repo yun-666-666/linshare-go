@@ -110,14 +110,25 @@ func (a *App) serveItem(w http.ResponseWriter, r *http.Request, id string) {
 func (a *App) localHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/state", func(w http.ResponseWriter, r *http.Request) {
-		a.mu.RLock()
-		defer a.mu.RUnlock()
+		a.mu.Lock()
+		defer a.mu.Unlock()
 		peers := []Peer{}
 		for _, p := range a.peers {
+			p.expireItems(time.Now())
 			peers = append(peers, *p)
 		}
 		writeJSON(w, map[string]any{"self": a.shelf, "peers": peers, "addresses": a.localAddresses(), "saveError": a.saveError})
 	})
+	forget := func(w http.ResponseWriter, r *http.Request) {
+		count, err := a.forgetOffline(r.PathValue("id"))
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		writeJSON(w, map[string]int{"removed": count})
+	}
+	mux.HandleFunc("DELETE /api/peers/{id}", forget)
+	mux.HandleFunc("POST /api/peers/cleanup", forget)
 	mux.HandleFunc("POST /api/text", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Text string `json:"text"`
@@ -292,16 +303,17 @@ func (a *App) content(w http.ResponseWriter, r *http.Request) {
 		a.serveItem(w, r, id)
 		return
 	}
-	a.mu.RLock()
+	a.mu.Lock()
 	p := a.peers[peer]
 	if p == nil {
-		a.mu.RUnlock()
+		a.mu.Unlock()
 		http.NotFound(w, r)
 		return
 	}
+	p.expireItems(time.Now())
 	for _, item := range p.Items {
 		if item.ID == id && item.Kind == "text" {
-			a.mu.RUnlock()
+			a.mu.Unlock()
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": "文字片段.txt"}))
 			http.ServeContent(w, r, "文字片段.txt", item.Created, strings.NewReader(item.Text))
@@ -309,13 +321,13 @@ func (a *App) content(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !p.Online || !p.Enabled || p.Locked {
-		a.mu.RUnlock()
+		a.mu.Unlock()
 		http.Error(w, "设备已离线或暂停共享", http.StatusGone)
 		return
 	}
 	addresses := append([]string{}, p.Addresses...)
 	code := p.Code
-	a.mu.RUnlock()
+	a.mu.Unlock()
 	client := &http.Client{Transport: &http.Transport{Proxy: nil, DialContext: netDialer.DialContext, ResponseHeaderTimeout: 10 * time.Second}, CheckRedirect: func(r *http.Request, via []*http.Request) error { return http.ErrUseLastResponse }}
 	defer client.CloseIdleConnections()
 	for _, address := range addresses {

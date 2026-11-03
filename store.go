@@ -95,15 +95,61 @@ func openApp(dir, name string) (*App, error) {
 			for i := range peers {
 				p := peers[i]
 				if p.Online || p.OfflineSince.IsZero() {
-					p.OfflineSince = time.Now()
+					p.OfflineSince = p.Updated
+					if p.OfflineSince.IsZero() {
+						p.OfflineSince = time.Now()
+					}
 				}
 				p.Online = false
 				p.Error = "等待设备重新连接"
+				p.expireItems(time.Now())
 				a.peers[p.ID] = &p
 			}
 		}
 	}
 	return a, nil
+}
+
+// Remote metadata expires; local shared files and saved downloads are untouched.
+func (p *Peer) expireItems(now time.Time) {
+	if p.Online || p.OfflineSince.IsZero() {
+		return
+	}
+	kept := make([]Item, 0, len(p.Items))
+	for _, item := range p.Items {
+		ttl := 30 * time.Second
+		if item.Kind == "text" {
+			ttl = 10 * time.Minute
+		}
+		if now.Sub(p.OfflineSince) < ttl {
+			kept = append(kept, item)
+		}
+	}
+	p.Items = kept
+}
+
+func (a *App) forgetOffline(id string) (int, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	kept := []Peer{}
+	removed := []string{}
+	for key, p := range a.peers {
+		if !p.Online && (id == "" || key == id) {
+			removed = append(removed, key)
+		} else {
+			kept = append(kept, *p)
+		}
+	}
+	if id != "" && len(removed) == 0 {
+		return 0, errors.New("设备已上线或记录已清理，请刷新后重试")
+	}
+	if err := atomicJSON(filepath.Join(a.dir, "peers.json"), kept); err != nil {
+		return 0, err
+	}
+	for _, key := range removed {
+		delete(a.peers, key)
+	}
+	return len(removed), nil
 }
 func atomicJSON(path string, v any) error {
 	f, err := os.CreateTemp(filepath.Dir(path), ".save-*")

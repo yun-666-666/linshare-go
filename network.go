@@ -207,15 +207,16 @@ func (a *App) refresh(ctx context.Context) {
 	for range peers {
 		<-done
 	}
-	a.mu.RLock()
+	a.mu.Lock()
 	saved := make([]Peer, 0, len(a.peers))
 	for _, p := range a.peers {
+		p.expireItems(time.Now())
 		saved = append(saved, *p)
 	}
-	a.mu.RUnlock()
 	if err := atomicJSON(a.dir+"/peers.json", saved); err != nil {
 		log.Print(err)
 	}
+	a.mu.Unlock()
 }
 func (a *App) refreshPeer(ctx context.Context, p Peer) {
 	var last error
@@ -232,6 +233,10 @@ func (a *App) refreshPeer(ctx context.Context, p Peer) {
 			res.Body.Close()
 			a.mu.Lock()
 			current := a.peers[p.ID]
+			if current == nil {
+				a.mu.Unlock()
+				return
+			}
 			current.Locked = true
 			current.Online = true
 			current.OfflineSince = time.Time{}
@@ -260,6 +265,17 @@ func (a *App) refreshPeer(ctx context.Context, p Peer) {
 		}
 		a.mu.Lock()
 		current := a.peers[p.ID]
+		if current == nil {
+			a.mu.Unlock()
+			return
+		}
+		// Try the last reachable address first after switching between networks.
+		for i, candidate := range current.Addresses {
+			if candidate == address {
+				current.Addresses[0], current.Addresses[i] = current.Addresses[i], current.Addresses[0]
+				break
+			}
+		}
 		current.Items = cat.Items
 		current.Name = cat.Name
 		current.Online = true
@@ -274,12 +290,16 @@ func (a *App) refreshPeer(ctx context.Context, p Peer) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	current := a.peers[p.ID]
+	if current == nil {
+		return
+	}
 	if current.Online || current.OfflineSince.IsZero() {
 		current.OfflineSince = time.Now()
 	}
 	current.Online = false
 	current.Locked = false
-	current.Error = "暂时无法连接 · 保留上次内容"
+	current.Error = "设备离线 · 缓存即将自动清理"
+	current.expireItems(time.Now())
 	if last != nil {
 		log.Printf("peer %s: %v", p.ID, last)
 	}

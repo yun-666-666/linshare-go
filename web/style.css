@@ -134,3 +134,42 @@ main { padding-top: var(--status-inset, 0px); }
 
 .desktop-license { display:none; }
 .desktop .desktop-license { display:inline; margin-left:16px; }
+
+.search-bar { display:flex; gap:8px; margin-top:10px; align-items:stretch; }
+.search-field { display:flex; align-items:center; flex:1; min-width:0; border:1px solid #64739355; border-radius:11px; background:#122032a6; padding:0 10px; color:#91a7c0; }
+.search-field:focus-within { border-color:#b49cdb; }
+.search-field > span { font-size:25px; }
+.search-field input { min-width:0; margin:0; border:0; background:none; padding:10px 7px; font-size:12px; }
+.search-field input::-webkit-search-cancel-button { display:none; }
+#searchClear { flex-shrink:0; width:28px; font-size:21px; }
+#kindFilter { min-width:90px; max-width:35%; padding:0 9px; border:1px solid #64739355; border-radius:11px; background:#202c40; color:#c9d4e7; font:inherit; font-size:12px; }
+#contentManager { padding:0 20px 20px; width:min(540px,calc(100% - 24px)); border-color:#7d8cac55; background:linear-gradient(145deg,#252b40,#182632); overscroll-behavior:contain; scrollbar-width:thin; }
+.manager-header { position:sticky; top:0; z-index:1; padding:20px 0 12px; background:#202b3b; box-shadow:0 8px 16px #202b3b; }
+.manager-header .dialog-head { margin-bottom:12px; }
+.manager-header h2 { font-size:19px; }
+.eyebrow { margin:0 0 4px; color:#a3a9d9; font-size:10px; letter-spacing:2px; }
+.manager-summary { margin:0 0 12px; font-size:11px; color:#aebcd1; }
+.manager-toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:11px; color:#94b5ba; }
+.manager-toolbar .light-button { border:1px solid #a399cd44; }
+.manager-help { font-size:11px; line-height:1.8; color:#9cacbf; margin:16px 0; }
+.device-group { border:1px solid color-mix(in srgb,var(--tint) 25%,transparent); border-left:3px solid var(--tint); border-radius:12px; background:#101a2a55; padding:12px; margin-top:12px; }
+.manager-device { align-items:flex-start; margin-bottom:7px; }
+.manager-heading { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.manager-heading strong { overflow-wrap:anywhere; font-size:13px; }
+.manager-status { color:#9aa9bc; font-size:10px; }
+.manager-status.online { color:#9bd8c7; }
+.manager-row { display:flex; align-items:center; gap:9px; border-top:1px solid #94aac016; }
+.manager-item { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:1; min-width:0; margin:0; padding:13px 0; }
+.manager-description { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.manager-name { font-size:12px; color:#e0e6f1; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.manager-description small { font-size:10px; color:#91a5b9; }
+.manager-remove { flex-shrink:0; padding:6px; border-radius:6px; background:#ef9ca014; color:#e7b3be; font-size:11px; }
+.manager-item input { width:22px; height:22px; accent-color:#a2dcd2; }
+.manager-empty { margin:16px 0 6px; font-size:11px; color:#8fa4b6; }
+.forget-device { margin:6px 0 0; padding-left:0; color:#afbdd2; font-size:11px; }
+@media(max-width:600px) {
+ #contentManager { max-height:calc(100dvh - var(--status-inset,24px) - 28px); padding:0 14px 14px; }
+ .manager-header { padding-top:16px; }
+ .manager-toolbar .light-button { padding:8px; }
+ .search-field input { font-size:12px; }
+}

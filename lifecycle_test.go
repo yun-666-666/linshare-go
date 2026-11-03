@@ -17,6 +17,66 @@ func localCall(a *App, method, path, body string) *httptest.ResponseRecorder {
 	a.localHandler().ServeHTTP(w, httptest.NewRequest(method, "http://127.0.0.1:48773"+path, strings.NewReader(body)))
 	return w
 }
+
+func TestOfflineCacheExpiresInStateAndDownload(t *testing.T) {
+	a := newTestApp(t)
+	_, _ = a.add("", "", "local content stays", nil)
+	p := &Peer{ID: "old-peer", OfflineSince: time.Now().Add(-31 * time.Second), Items: []Item{{ID: "file", Kind: "file"}, {ID: "text", Kind: "text", Text: "temporary text"}}}
+	a.peers[p.ID] = p
+	w := localCall(a, "GET", "/api/state", "")
+	if w.Code != 200 || len(p.Items) != 1 || p.Items[0].Kind != "text" {
+		t.Fatalf("file expiry did not reach state: %s", w.Body.String())
+	}
+	p.OfflineSince = time.Now().Add(-11 * time.Minute)
+	w = localCall(a, "GET", "/api/content/old-peer/text", "")
+	if w.Code != http.StatusGone || len(p.Items) != 0 {
+		t.Fatalf("expired text still served: %d", w.Code)
+	}
+	if len(a.shelf.Items) != 1 {
+		t.Fatal("expiry removed local shared content")
+	}
+}
+
+func TestRestartDoesNotReviveOldCache(t *testing.T) {
+	a := newTestApp(t)
+	p := Peer{ID: "old-peer", Online: true, Updated: time.Now().Add(-time.Hour), Items: []Item{{ID: "old", Kind: "text"}}}
+	if err := atomicJSON(filepath.Join(a.dir, "peers.json"), []Peer{p}); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := openApp(a.dir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reopened.peers[p.ID].Items) != 0 {
+		t.Fatal("restart reset the cache expiry clock")
+	}
+}
+
+func TestForgetOfflinePreservesOnlineAndLocalData(t *testing.T) {
+	a := newTestApp(t)
+	local, _ := a.add("keep.txt", "text/plain", "", strings.NewReader("keep this file"))
+	a.peers["offline"] = &Peer{ID: "offline", Items: []Item{{ID: "cached", Kind: "text"}}}
+	a.peers["online"] = &Peer{ID: "online", Online: true, Items: []Item{}}
+	if w := localCall(a, "DELETE", "/api/peers/online", ""); w.Code != http.StatusBadRequest {
+		t.Fatal("cleanup should not remove a currently online device")
+	}
+	w := localCall(a, "POST", "/api/peers/cleanup", "")
+	if w.Code != 200 || a.peers["offline"] != nil || a.peers["online"] == nil {
+		t.Fatalf("cleanup failed: %s", w.Body.String())
+	}
+	reopened, err := openApp(a.dir, "")
+	if err != nil || reopened.peers["offline"] != nil || len(reopened.shelf.Items) != 1 {
+		t.Fatal("cleanup was not persisted or removed local data")
+	}
+	if data, err := os.ReadFile(filepath.Join(a.dir, "files", local.ID)); err != nil || string(data) != "keep this file" {
+		t.Fatal("cleanup removed a local file")
+	}
+	// A request already in flight must not recreate a forgotten record.
+	a.refreshPeer(context.Background(), Peer{ID: "offline"})
+	if a.peers["offline"] != nil {
+		t.Fatal("refresh revived forgotten device")
+	}
+}
 func TestOfflineClockAndCachedText(t *testing.T) {
 	sender, receiver := newTestApp(t), newTestApp(t)
 	item, _ := sender.add("", "", "离线仍可保存的文字", nil)
