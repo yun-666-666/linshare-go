@@ -1,0 +1,30 @@
+LinShare Go / 邻享 Go
+Copyright (c) 2026 yun-666-666
+
+This distribution contains the Go rewrite of LinShare. The earlier Flutter
+edition was derived from LocalSend v1.18.2. We gratefully acknowledge LocalSend
+and its authors, contributors, translators and maintainers as the foundation
+of that earlier edition and a reference for local-network sharing.
+
+LocalSend: https://github.com/localsend/localsend
+Copyright (C) 2022-2026 Tien Do Nam and LocalSend contributors.
+Licensed under Apache License 2.0; see licenses/LocalSend-Apache-2.0.txt.
+LinShare Go is not an official LocalSend release and uses its own protocol.
+
+Runtime dependencies:
+- go-webview2: John Chadwick, portions by Serge Zaitsev; MIT.
+- go-winloader: John Chadwick; ISC.
+- Go and golang.org/x/sys: The Go Authors; BSD 3-Clause.
+- go-webview2 includes a Microsoft-origin notice, retained in full in
+  THIRD_PARTY_LICENSES.txt and web/desktop-licenses.txt.
+
+Build tool:
+- rsrc: The rsrc Authors; MIT.
+
+Thank you to these projects and all their contributors.
+See THIRD_PARTY_LICENSES.txt for dependency notices and license texts.
+The separately installed Microsoft WebView2 Runtime is governed by its own
+Microsoft terms; it is not relicensed by this project.
+
+The project's LICENSE applies only to material the project copyright holder
+has authority to license. Third-party rights and licenses remain unchanged.

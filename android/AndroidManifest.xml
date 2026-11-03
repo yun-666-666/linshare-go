@@ -1,0 +1,19 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="net.linshare.go" android:versionCode="2" android:versionName="1.1.0">
+ <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="36"/>
+ <uses-permission android:name="android.permission.INTERNET"/>
+ <uses-permission android:name="android.permission.WAKE_LOCK"/>
+ <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+ <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+ <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+ <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
+ <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+ <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+ <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+ <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+ <application android:label="邻享 Go" android:theme="@android:style/Theme.Material.NoActionBar" android:icon="@drawable/icon" android:allowBackup="false" android:usesCleartextTraffic="true" android:extractNativeLibs="true" android:debuggable="true">
+  <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize" android:configChanges="orientation|screenSize|keyboardHidden">
+   <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+  </activity>
+  <service android:name=".ShareService" android:exported="false" android:foregroundServiceType="connectedDevice"/>
+ </application>
+</manifest>

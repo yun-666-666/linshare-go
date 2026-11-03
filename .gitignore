@@ -1,0 +1,6 @@
+/out/
+/output/
+/test-data/
+/.playwright-cli/
+
+/desktop_windows_amd64.syso

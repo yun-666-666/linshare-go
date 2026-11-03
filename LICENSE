@@ -1,0 +1,72 @@
+轻记个人非商业学习许可 1.0
+QingJi Personal Noncommercial Learning License 1.0
+
+Copyright (c) 2026 yun-666-666
+
+中文条款（如中英文有歧义，以中文为准）
+
+1. 适用范围
+本许可适用于本项目著作权人有权许可的源码、资源及发布的安装包。
+第三方材料如另有许可，仍适用其原有许可；本许可不变更第三方权利。
+
+2. 允许的使用
+个人可以仅为非商业的个人学习、研究和参考目的，下载、阅读、复制、
+编译、运行及修改本软件。允许为上述目的免费分享原版或修改版，
+但必须完整保留本许可和著作权声明，并明确标注所作修改。
+分享不得授予超出本许可范围的权利。
+
+3. 禁止商业使用及其他未授权使用
+未经著作权人另行书面许可，禁止任何商业使用，包括但不限于销售、
+收费分发、付费服务、广告获利、商业产品集成、商业委托开发，以及
+企业或其他组织的业务、生产或运营使用。不得以免费提供、间接获利、
+捐赠名义或修改代码等方式规避本限制。
+本许可仅授予第2条列明的个人学习参考权利，其他用途均需另行授权。
+
+4. 免责与责任限制
+在适用法律允许的最大范围内，本软件按“现状”提供，不附带任何明示或
+默示担保，包括适销性、特定用途适用性和不侵权担保。著作权人不对
+因使用或无法使用本软件而产生的索赔、损害或其他责任承担责任。
+
+5. 终止与保留权利
+违反本许可即自动终止本许可授予的权利。未明确授予的权利均予保留。
+本许可不授予商标权，也不表示著作权人认可任何修改版或使用者。
+
+6. 许可性质
+这是限制用途的源码可见许可。由于禁止商业使用，不属于通常所称的
+开放源代码许可（OSI Open Source Definition）。公开源码不等于允许商用。
+
+English translation
+
+1. Scope. This license covers the source code, resources, and released binaries
+that the project copyright holder has authority to license. Separately licensed
+third-party materials remain governed by their original licenses.
+
+2. Permission. Individuals may download, study, copy, compile, run, and modify
+the software solely for personal, noncommercial learning, research, and reference.
+Original or modified copies may be shared free of charge for those purposes only,
+with this license and copyright notice retained in full and changes clearly marked.
+Redistribution may not grant rights beyond this license.
+
+3. Restrictions. Any commercial use requires separate written permission from
+the copyright holder. Prohibited uses include sales, paid distribution or services,
+advertising revenue, integration into commercial products, commercial contract
+development, and business, production, or operational use by companies or other
+organizations. Free distribution, indirect profit, donation labels, or modifications
+must not be used to evade these restrictions. Uses beyond the individual learning
+and reference permissions in section 2 require separate authorization.
+
+4. Disclaimer. To the maximum extent permitted by applicable law, the software
+is provided "AS IS", without express or implied warranties, including warranties
+of merchantability, fitness for a particular purpose, or noninfringement. The
+copyright holder is not liable for claims, damages, or other liability arising
+from use of or inability to use the software.
+
+5. Termination and reserved rights. A violation automatically terminates the
+rights granted by this license. All rights not expressly granted are reserved.
+No trademark rights or endorsement of modifications or users are granted.
+
+6. Source-available status. This is a use-restricted, source-available license.
+Its commercial-use prohibition means it is not an open-source license under the
+OSI Open Source Definition. Public source availability does not permit commercial use.
+
+The Chinese terms control if the translations differ.
