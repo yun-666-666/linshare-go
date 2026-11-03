@@ -43,8 +43,17 @@ func openWindow(url string) {
 	}
 	defer w.Destroy()
 	w.SetSize(640, 540, webview.HintMin)
-	dark := int32(1)
-	windows.NewLazySystemDLL("dwmapi.dll").NewProc("DwmSetWindowAttribute").Call(uintptr(w.Window()), 20, uintptr(unsafe.Pointer(&dark)), 4)
+	dwmSetAttribute := windows.NewLazySystemDLL("dwmapi.dll").NewProc("DwmSetWindowAttribute")
+	// DWM colors use COLORREF (0x00BBGGRR), matching the dark sharing surface.
+	for _, attribute := range []struct{ id, value uint32 }{
+		{20, 1},          // Dark native window controls.
+		{33, 2},          // Rounded window corners.
+		{34, 0x005b463c}, // Border: #3c465b.
+		{35, 0x0033231b}, // Caption: #1b2333.
+		{36, 0x00f5e5dc}, // Title: #dce5f5.
+	} {
+		dwmSetAttribute.Call(uintptr(w.Window()), uintptr(attribute.id), uintptr(unsafe.Pointer(&attribute.value)), 4)
+	}
 	w.Init("document.addEventListener('DOMContentLoaded',()=>document.documentElement.classList.add('desktop'))")
 	w.Navigate(url)
 	w.Run()

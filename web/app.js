@@ -84,16 +84,16 @@ function render() {
  $('peerCount').textContent = `${peers.filter(p => p.online).length} 台附近设备`;
  $('filters').querySelectorAll('.device-filter').forEach(e => e.remove());
  const listedPeers=peers.filter(p=>!preferences.devices[p.id]&&(p.online||p.items.some(item=>retainedItem(p,item))));
- if (filter !== 'all' && filter !== 'self' && !listedPeers.some(p=>p.id===filter)) filter='all';
- for (const p of listedPeers) { const button = element('button', 'chip device-filter' + (filter === p.id ? ' selected' : ''), p.name + (p.online ? '' : ' · 离线')); tint(button,p.id); button.onclick = () => setFilter(p.id); $('filters').append(button); }
- $('filters').querySelectorAll('[data-filter]').forEach(e => e.classList.toggle('selected', e.dataset.filter === filter));
+ $('filters').hidden = !listedPeers.length;
+ if (filter !== 'all' && !listedPeers.some(p=>p.id===filter)) filter='all';
+ for (const p of listedPeers) { const button = element('button', 'chip device-filter' + (filter === p.id ? ' selected' : ''), p.name + (p.online ? '' : ' · 离线')); button.setAttribute('aria-pressed',String(filter === p.id)); tint(button,p.id); button.onclick = () => setFilter(filter === p.id ? 'all' : p.id); $('filters').append(button); }
  $('peerStatus').replaceChildren();
  for (const p of peers) { if (preferences.devices[p.id] || (!p.online && offlineAge(p)>=OFFLINE_FILE_MS) || !p.error || (filter !== 'all' && filter !== p.id)) continue; const note = element('div','peer-note'); note.append(element('span','',`${p.name} · ${p.error}`));
   if (p.locked) { const form = element('form'); const input = element('input'); input.type = 'password'; input.placeholder = '输入共享码'; input.setAttribute('aria-label', `${p.name} 的共享码`); const button = element('button','light-button','解锁'); form.append(input, button); form.onsubmit = async e => { e.preventDefault(); try { await api(`/api/unlock/${p.id}`, {code:input.value}); await load(); if (state.peers.find(x => x.id === p.id)?.locked) toast('共享码不正确'); } catch(e) { toast(e.message); } }; note.append(form); }
   $('peerStatus').append(note);
  }
  const entries = [];
- if (filter === 'all' || filter === 'self') for (const item of state.self.items) entries.push({item,peer:'self',name:'我的共享',online:true});
+ if (filter === 'all') for (const item of state.self.items) entries.push({item,peer:'self',name:'我的共享',online:true});
  for (const p of peers) if (filter === 'all' || filter === p.id) for (const item of p.items.filter(item=>visibleItem(p,item))) entries.push({item,peer:p.id,name:p.name,online:p.online});
  const matches=entries.filter(({item,name})=>(kindFilter==='all'||item.kind===kindFilter)&&(!query||`${item.text||''} ${item.name} ${name}`.toLocaleLowerCase().includes(query)));
  matches.sort((a,b) => new Date(b.item.created) - new Date(a.item.created)); $('itemCount').textContent = matches.length; $('empty').hidden = matches.length > 0;
@@ -144,13 +144,12 @@ function renderPending() {
  selected.forEach((entry,i) => { const chip = element('div','pending-item'); if(entry.preview) { const img = element('img');img.src=entry.preview;img.alt='';chip.append(img); } chip.append(element('span','',entry.file.name)); const remove = element('button','','×'); remove.setAttribute('aria-label',`移除 ${entry.file.name}`);remove.disabled=busy;remove.onclick=()=>{if(entry.preview)URL.revokeObjectURL(entry.preview);selected.splice(i,1);renderPending();};chip.append(remove);$('pending').append(chip); }); updateDraft();
 }
 function upload(files) { return new Promise((resolve,reject) => { const xhr = new XMLHttpRequest(); xhr.open('POST','/api/files'); const data = new FormData(); files.forEach(f => data.append('files',f.file,f.file.name)); xhr.upload.onprogress = e => { if(e.lengthComputable) {$('progress').value=e.loaded/e.total*100;$('composeHint').textContent=`正在添加 ${Math.round(e.loaded/e.total*100)}%`;}}; xhr.onerror=()=>reject(Error('连接中断，已完成的文件会保留'));xhr.onload=()=>xhr.status===200 ? resolve() : reject(Error(xhr.responseText || '文件添加失败'));xhr.send(data); }); }
-$('publish').onclick = async () => { if(busy)return;busy=true;updateDraft();$('pickFiles').disabled=true;$('pickPhotos').disabled=true;$('text').disabled=true;$('progress').hidden=false;renderPending();try { if(selected.length) {await upload(selected);selected.forEach(f=>{if(f.preview)URL.revokeObjectURL(f.preview);});selected=[];renderPending();} if($('text').value.trim()) {await api('/api/text',{text:$('text').value});$('text').value='';} toast('已发布，附近设备将自动看到'); } catch(e) {toast(e.message);} finally {busy=false;$('pickFiles').disabled=false;$('pickPhotos').disabled=false;$('text').disabled=false;$('progress').hidden=true;$('composeHint').textContent='同一网络内可见 · 可拖入文件';renderPending();await load();} };
+$('publish').onclick = async () => { if(busy)return;busy=true;updateDraft();$('pickFiles').disabled=true;$('pickPhotos').disabled=true;$('text').disabled=true;$('progress').hidden=false;renderPending();try { if(selected.length) {await upload(selected);selected.forEach(f=>{if(f.preview)URL.revokeObjectURL(f.preview);});selected=[];renderPending();} if($('text').value.trim()) {await api('/api/text',{text:$('text').value});$('text').value='';} toast('已发布，附近设备将自动看到'); } catch(e) {toast(e.message);} finally {busy=false;$('pickFiles').disabled=false;$('pickPhotos').disabled=false;$('text').disabled=false;$('progress').hidden=true;$('composeHint').textContent='';renderPending();await load();} };
 $('pickFiles').onclick=()=>$('files').click();$('pickPhotos').onclick=()=>$('photos').click();
 for(const id of ['files','photos']) $(id).onchange=e=>{pick(e.target.files);e.target.value='';};
 $('text').oninput=updateDraft;
 for(const name of ['dragenter','dragover']) $('dropzone').addEventListener(name,e=>{e.preventDefault();if(!busy)$('dropzone').classList.add('dragging');});
 $('dropzone').ondragleave=()=>$('dropzone').classList.remove('dragging');$('dropzone').ondrop=e=>{e.preventDefault();$('dropzone').classList.remove('dragging');if(!busy)pick(e.dataTransfer.files);};
-$('filters').querySelectorAll('[data-filter]').forEach(e=>e.onclick=()=>setFilter(e.dataset.filter));
 $('refresh').onclick=async()=>{$('refresh').disabled=true;try{await api('/api/refresh');await load();}catch(e){toast(e.message);}finally{$('refresh').disabled=false;}};
 function openSettings(){if(!state)return;$('nameInput').value=state.self.name;$('codeInput').value=state.self.code||'';$('enabledInput').checked=state.self.enabled;$('autoSaveInput').checked=!!state.self.autoSave;$('addresses').textContent=state.addresses.join(' · ');$('settings').showModal();}
 $('deviceSettings').onclick=openSettings;$('settingsClose').onclick=()=>$('settings').close();
@@ -162,7 +161,7 @@ $('manageDevices').onclick=()=>{manager();$('contentManager').showModal();};$('m
 $('clearOffline').onclick=()=>clearOffline();
 $('search').oninput=()=>{query=$('search').value.trim().toLocaleLowerCase();if(state)render();};
 $('searchClear').onclick=()=>{$('search').value='';query='';render();$('search').focus();};
-$('kindFilter').onchange=()=>{kindFilter=$('kindFilter').value;if(state)render();};
+$('kindFilter').querySelectorAll('[data-kind]').forEach(button=>button.onclick=()=>{kindFilter=button.dataset.kind;$('kindFilter').querySelectorAll('[data-kind]').forEach(option=>option.setAttribute('aria-pressed',String(option.dataset.kind===kindFilter)));if(state)render();});
 if(window.Android && Android.backgroundSettings){$('backgroundSettings').hidden=false;$('backgroundSettings').onclick=()=>Android.backgroundSettings();}
-if(window.Android && Android.appBackgroundSettings){$('vendorBackgroundSettings').hidden=false;$('vendorBackgroundSettings').onclick=()=>Android.appBackgroundSettings();$('backgroundHelp').hidden=false;}
+if(window.Android && Android.appBackgroundSettings){$('vendorBackgroundSettings').hidden=false;$('vendorBackgroundSettings').onclick=()=>Android.appBackgroundSettings();}
 load();setInterval(()=>{if(!document.hidden)load();},2000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
